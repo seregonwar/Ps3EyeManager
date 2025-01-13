@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\marco\source\repos\PS3WCD\ps3eye_manager\src\driver\virtual_camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\marco\source\repos\PS3WCD\ps3eye_manager\src\driver\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A0169AA4-FA22-3662-8B27-B5D16B34D8D3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,95 @@
+; =====================================================================
+; PS3Eye Driver for Windows XP/2003/Vista/Win7/Win8 x86/x64
+; PS3EyeCamera.inf
+; Driver installation file for the Sony PS3Eye camera
+; Copyright (c) 2008-2012 Code Laboratories, Inc. All Rights Reserved.
+; =====================================================================
+[Version]
+Signature = "$Windows NT$"
+Class     = Image
+ClassGuid = {6bdd1fc6-810f-11d0-bec7-08002be2092f}
+Provider  = %ProviderName%
+DriverVer = 12/06/2012, 5.3.0.0341
+CatalogFile = PS3EyeCamera.cat
+
+; ========== Manufacturer/Models sections ===========
+[Manufacturer]
+%Manufacturer% = Sony, NTx86, NTamd64
+
+[Sony.NTx86]
+%PS3EyeDesc% = PS3EyeInstall, USB\VID_1415&PID_2000&MI_00
+
+[Sony.NTamd64]
+%PS3EyeDesc% = PS3EyeInstall, USB\VID_1415&PID_2000&MI_00
+
+[PS3EyeInstall]
+Include      = winusb.inf, msmf.inf
+Needs        = WINUSB.NT, MSMF.Registration
+AddProperty  = DeviceProperties
+
+[DeviceProperties]
+DeviceIcon,,,,"%SYSTEMROOT%\System32\CLEyeDevices.dll,-100"
+
+[PS3EyeInstall.Services]
+Include       = winusb.inf
+AddService    = WinUSB,0x00000002,WinUSB_ServiceInstall
+
+[WinUSB_ServiceInstall]
+DisplayName   = %WinUSB_SvcDesc%
+ServiceType   = 1
+StartType     = 3
+ErrorControl  = 1
+ServiceBinary = %12%\WinUSB.sys
+
+[PS3EyeInstall.Wdf]
+KmdfService   = WINUSB, WinUsb_Install
+
+[WinUSB_Install]
+KmdfLibraryVersion = 1.9
+
+[PS3EyeInstall.HW]
+AddReg = Dev_AddReg
+
+[Dev_AddReg]
+; Webcam interface GUID
+HKR,,DeviceInterfaceGUIDs,0x10000,"{e5323777-f976-4f5b-9b55-b94699c46e44}"
+HKR,,DeviceInterfaceGUIDs,0x10000,"{a5dcbf10-6530-11d2-901f-00c04fb951ed}"
+HKR,,FriendlyName,,%PS3EyeDesc%
+
+[PS3EyeInstall.CoInstallers]
+AddReg    = CoInstallers_AddReg
+CopyFiles = CoInstallers_CopyFiles
+
+[CoInstallers_AddReg]
+HKR,,CoInstallers32,0x00010000,"WinUSBCoInstaller2.dll","WdfCoInstaller01009.dll"
+
+[CoInstallers_CopyFiles]
+WinUSBCoInstaller2.dll
+WdfCoInstaller01009.dll
+
+[DestinationDirs]
+CoInstallers_CopyFiles = 11
+
+; ================= Source Media Section =====================
+[SourceDisksNames]
+1 = %DISK_NAME%,,,
+
+[SourceDisksFiles]
+WinUSBCoInstaller2.dll  = 1
+WdfCoInstaller01009.dll = 1
+
+; =================== Strings ===================
+[Strings]
+; Some defines
+REG_SZ         = 0x00000000
+REG_MULTI_SZ   = 0x00010000
+REG_BINARY     = 0x00000001
+REG_DWORD      = 0x00010001
+ADDKEYONLY     = 0x00000010
+; String values
+Manufacturer   = "Sony"
+ProviderName   = "PS3 Eye Driver"
+CLDevClassName = "CL Devices"
+PS3EyeDesc     = "PS3Eye Camera"
+WinUSB_SvcDesc = "PS3Eye Camera USB Driver"
+DISK_NAME      = "PS3Eye Installation Disk"

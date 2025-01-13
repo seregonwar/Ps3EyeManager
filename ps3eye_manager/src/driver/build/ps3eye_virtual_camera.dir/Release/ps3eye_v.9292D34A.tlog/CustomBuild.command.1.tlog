@@ -1,0 +1,10 @@
+^C:\USERS\MARCO\SOURCE\REPOS\PS3WCD\PS3EYE_MANAGER\SRC\DRIVER\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/marco/source/repos/PS3WCD/ps3eye_manager/src/driver -BC:/Users/marco/source/repos/PS3WCD/ps3eye_manager/src/driver/build --check-stamp-file C:/Users/marco/source/repos/PS3WCD/ps3eye_manager/src/driver/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
