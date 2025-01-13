@@ -1,57 +1,59 @@
 # PS3 Eye Manager - Installer
 
-Questo installer automatico configura tutto il necessario per utilizzare PS3 Eye Manager.
+This automatic installer sets up everything needed to use PS3 Eye Manager.
 
-## Requisiti
+## Requirements
 
 - Windows 10/11 (64-bit)
-- Connessione internet
-- Privilegi di amministratore
+- Internet Connection
+- Administrator Privileges
 
-## Cosa installa
+## What it installs
 
-1. **Python** (se non presente)
-   - Python 3.11 o superiore
-   - pip (gestore pacchetti Python)
+1. **Python** (if not present)
+   - Python 3.11 or higher
+   - pip (Python package manager)
 
-2. **Dipendenze Python**
+2. **Python dependencies**
    - numpy
    - opencv-python
    - PyQt5
    - comtypes
    - pywin32
 
-3. **Driver e Software**
-   - OBS Studio con Virtual Camera
-   - Unity Capture (driver webcam virtuale alternativo)
+3. **Drivers and Software**
+   - OBS Studio with Virtual Camera
+   - Unity Capture (alternative virtual webcam driver)
    - FFmpeg
 
-## Istruzioni
+## Instructions
 
-1. Scarica questa cartella
-2. Esegui `install.bat` come amministratore
-3. Attendi il completamento dell'installazione
-4. Riavvia il computer
-5. PS3 Eye Manager è pronto all'uso!
+1. Download this folder
+2. Run `install.bat` as administrator
+3. Wait for the installation to complete
+4. Restart the computer
+5. PS3 Eye Manager is ready to use!
 
-## Risoluzione problemi
+## Troubleshooting
 
-Se incontri problemi durante l'installazione:
+If you encounter problems during installation
 
-1. Controlla il file `install.log` nella cartella dell'installer
-2. Verifica di avere una connessione internet attiva
-3. Assicurati di eseguire l'installer come amministratore
-4. Prova a disabilitare temporaneamente l'antivirus
+1. Check the `install.log` file in the installer folder
+2. Make sure you have an active internet connection
+3. Make sure you are running the installer as administrator
+4. Try temporarily disabling antivirus
 
-## Note
+## Notes
 
-- L'installazione richiede circa 1-2 GB di spazio su disco
-- Il processo di installazione può richiedere alcuni minuti
-- È necessario riavviare il computer dopo l'installazione
+- Installation requires approximately 1-2 GB of disk space
+- The installation process may take a few minutes
+- It is necessary to restart the computer after installation
 
-## Supporto
+## Support
 
-Se hai bisogno di aiuto:
-1. Controlla la documentazione in `docs/`
-2. Apri un issue su GitHub
-3. Contatta il supporto tecnico
+If you need help
+1. Check the documentation in `docs/`
+2. Open an issue on GitHub
+3. Contact technical support
+
+Translated with DeepL.com (free version)
