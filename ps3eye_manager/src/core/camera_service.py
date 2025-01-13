@@ -130,24 +130,12 @@ class CLEyeService:
                     continue
                 
                 error_count = 0  # Reset del contatore errori
-                
-                # Verifica che il frame sia nel formato corretto
-                try:
-                    if len(frame.shape) != 3 or frame.shape[2] != 3:
-                        logging.error(f"Formato frame non valido: {frame.shape}")
-                        continue
-                except (AttributeError, IndexError) as e:
-                    logging.error(f"Frame non valido: {e}")
-                    continue
                     
                 # Aggiorna il frame corrente e notifica
                 with self._frame_lock:
-                    self._current_frame = frame.copy()  # Crea una copia per evitare race conditions
+                    self._current_frame = frame
                     if self._frame_callback:
-                        try:
-                            self._frame_callback(self._current_frame)
-                        except Exception as e:
-                            logging.error(f"Errore nella callback del frame: {e}")
+                        self._frame_callback(frame)
                     
                 # Aggiorna statistiche FPS
                 frame_count += 1
@@ -237,30 +225,27 @@ class CLEyeService:
     def _configure_camera_parameters(self):
         """Configura i parametri della telecamera con gestione errori"""
         params = [
-            (CLEyeCameraParameter.CLEYE_AUTO_GAIN, 1),  # Abilita auto gain
-            (CLEyeCameraParameter.CLEYE_AUTO_EXPOSURE, 1),  # Abilita auto exposure
-            (CLEyeCameraParameter.CLEYE_AUTO_WHITEBALANCE, 1),  # Abilita auto white balance
-            (CLEyeCameraParameter.CLEYE_GAIN, 20),  # Ridotto per evitare saturazione
-            (CLEyeCameraParameter.CLEYE_EXPOSURE, 30),  # Ridotto per evitare sovraesposizione
-            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_RED, 50),  # Bilanciamento neutro
-            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_GREEN, 50),
-            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_BLUE, 50),
-            (CLEyeCameraParameter.CLEYE_HFLIP, 0),
-            (CLEyeCameraParameter.CLEYE_VFLIP, 0),
-            (CLEyeCameraParameter.CLEYE_HKEYSTONE, 0),
+            (CLEyeCameraParameter.CLEYE_AUTO_GAIN, 0),
+            (CLEyeCameraParameter.CLEYE_AUTO_EXPOSURE, 0),
+            (CLEyeCameraParameter.CLEYE_AUTO_WHITEBALANCE, 0),
+            (CLEyeCameraParameter.CLEYE_GAIN, 30),  # Aumentato per migliore luminosità
+            (CLEyeCameraParameter.CLEYE_EXPOSURE, 50),  # Ridotto per evitare sovraesposizione
+            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_RED, 60),  # Bilanciamento del bianco migliorato
+            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_GREEN, 55),
+            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_BLUE, 65),
+            (CLEyeCameraParameter.CLEYE_HFLIP, 0),  # No flip orizzontale
+            (CLEyeCameraParameter.CLEYE_VFLIP, 0),  # No flip verticale
+            (CLEyeCameraParameter.CLEYE_HKEYSTONE, 0),  # No correzione keystone
             (CLEyeCameraParameter.CLEYE_VKEYSTONE, 0),
-            (CLEyeCameraParameter.CLEYE_LENSCORRECTION1, 0),
+            (CLEyeCameraParameter.CLEYE_LENSCORRECTION1, 0),  # No correzione lente
             (CLEyeCameraParameter.CLEYE_LENSCORRECTION2, 0),
             (CLEyeCameraParameter.CLEYE_LENSCORRECTION3, 0),
-            (CLEyeCameraParameter.CLEYE_LENSBRIGHTNESS, 10)  # Ridotto per maggiore stabilità
+            (CLEyeCameraParameter.CLEYE_LENSBRIGHTNESS, 20)  # Luminosità lente moderata
         ]
         
         for param, value in params:
             if not self.camera.set_parameter(param, value):
                 logging.warning(f"Impossibile impostare il parametro {param.name} a {value}")
-                
-        # Breve pausa per permettere alla camera di stabilizzarsi
-        time.sleep(0.1)
         
         logging.info("Parametri della telecamera configurati")
 

@@ -8,13 +8,6 @@ import numpy as np
 import os
 import sys
 from pathlib import Path
-import logging
-
-try:
-    import cv2
-except ImportError:
-    cv2 = None
-    logging.warning("OpenCV non trovato. La conversione del colore sarà limitata.")
 
 class GUID(ctypes.Structure):
     _fields_ = [
@@ -159,7 +152,6 @@ class PS3EyeCamera:
                      resolution: CLEyeCameraResolution, framerate: int) -> bool:
         """Crea un'istanza della telecamera con i parametri specificati"""
         self._camera = self._dll.CLEyeCreateCamera(uuid, color_mode, resolution, framerate)
-        self._color_mode = color_mode
         return self._camera is not None
 
     def destroy_camera(self) -> bool:
@@ -206,7 +198,7 @@ class PS3EyeCamera:
         """
         if not self._camera:
             raise RuntimeError("Camera non inizializzata")
-        
+            
         # Alloca il buffer per il frame
         width = ctypes.c_int()
         height = ctypes.c_int()
@@ -214,41 +206,25 @@ class PS3EyeCamera:
                                               ctypes.byref(width), 
                                               ctypes.byref(height))
         
-        # Determina la dimensione del buffer in base al color mode
-        channels = 1  # Default per grayscale
-        if hasattr(self, '_color_mode') and self._color_mode == CLEyeCameraColorMode.CLEYE_COLOR:
-            channels = 4  # RGBA per color mode
-        
-        buffer_size = width.value * height.value * channels
+        # Alloca il buffer per RGB (3 canali)
+        buffer_size = width.value * height.value * 4  # RGBA
         buffer = (ctypes.c_byte * buffer_size)()
         
         if self._dll.CLEyeCameraGetFrame(self._camera, buffer, timeout):
-            try:
-                # Converti il buffer in numpy array
-                frame = np.frombuffer(buffer, dtype=np.uint8)
-                
-                if channels == 1:
-                    # Grayscale
-                    frame = frame.reshape((height.value, width.value))
-                    if cv2 is not None:
-                        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-                    else:
-                        # Fallback senza OpenCV
-                        frame = np.stack((frame,) * 3, axis=-1)
-                else:
-                    # RGBA -> BGR
-                    frame = frame.reshape((height.value, width.value, channels))
-                    if cv2 is not None:
-                        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-                    else:
-                        # Fallback senza OpenCV - prendi solo i canali BGR
-                        frame = frame[:, :, :3]
-                    
-                return frame
-                
-            except Exception as e:
-                logging.error(f"Errore nell'elaborazione del frame: {str(e)}, shape: {frame.shape if 'frame' in locals() else 'N/A'}")
-                raise RuntimeError(f"Errore nell'elaborazione del frame: {str(e)}")
+            # Converti il buffer in numpy array
+            frame = np.frombuffer(buffer, dtype=np.uint8)
+            frame = frame.reshape((height.value, width.value, 4))
+            
+            # Normalizza i valori
+            frame = frame.astype(np.float32) / 255.0
+            frame = np.clip(frame * 1.5, 0, 1)  # Aumenta leggermente la luminosità
+            frame = (frame * 255).astype(np.uint8)
+            
+            # Assicurati che il canale alpha sia 255
+            if frame.shape[2] == 4:
+                frame[..., 3] = 255
+            
+            return frame
         else:
             raise RuntimeError("Errore nella cattura del frame")
 
