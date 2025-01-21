@@ -21,7 +21,7 @@ if not exist %PYTHON_PATH% (
 
 rem Launch the application
 cd /d "%~dp0"
-%PYTHON_PATH% ps3eye_manager/src/main_v3.py
+%PYTHON_PATH% ps3eye_manager/src/main.py
 
 rem If there is an error, show the message and wait
 if errorlevel 1 (
