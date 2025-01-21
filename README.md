@@ -33,7 +33,7 @@ It has been tested with the **AY0140890** and is fully functional.
 
 ## ⚙️ **Installation**
 
-1. **Inclusions in the package  
+1. **Inclusions in the package**  
    Most of the elements listed above are already present within the source code or can be installed automatically.
 
 2. **Integrated installer:**  
