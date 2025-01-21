@@ -1,6 +1,6 @@
 # PS3 Eye Manager - Installer
 
-This automatic installer configures everything you need to use PS3 Eye Manager.
+This automatic installer configures everything needed to use PS3 Eye Manager.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ This automatic installer configures everything you need to use PS3 Eye Manager.
 
 ## What it installs
 
-1. **Python** (if not present).
+1. **Python** (if not present)
    - Python 3.11 or higher
    - pip (Python package manager)
 
@@ -21,12 +21,12 @@ This automatic installer configures everything you need to use PS3 Eye Manager.
    - comtypes
    - pywin32
 
-3. **Drivers and Software**
+3. **Drivers and software**
    - OBS Studio with Virtual Camera
    - Unity Capture (alternative virtual webcam driver)
    - FFmpeg
 
-## Instructions.
+## Instructions
 
 1. Download this folder
 2. Run `install.bat` as administrator
@@ -36,24 +36,20 @@ This automatic installer configures everything you need to use PS3 Eye Manager.
 
 ## Troubleshooting
 
-If you encounter problems during installation:
+   If you encounter problems during installation:
 
-1. Check the `install.log` file in the installer folder.
+1. Check the `install.log` file in the installer folder
 2. Verify that you have an active internet connection
-3. Make sure you are running the installer as an administrator
-4. Try temporarily disabling antivirus
+3. Ensure you run the installer as an administrator
+4. Temporarily disable your antivirus
 
-## Notes
+## Note
 
-- Installation requires approximately 1-2 GB of disk space
+- The installation requires about 1-2 GB of disk space
 - The installation process may take a few minutes
-- You need to restart your computer after installation
+- You need to restart the computer after installation
 
 ## Support
 
 If you need help:
-1. Check the documentation in `docs/`
-2. Open an issue on GitHub
-3. Contact technical support
-
-Translated with DeepL.com (free version)
+1. Open an issue on GitHub
