@@ -1,5 +1,5 @@
 """
-Widget per il controllo dei parametri della telecamera
+Widget for controlling camera parameters
 """
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -15,7 +15,7 @@ from core.camera import (
 )
 
 class CameraControlWidget(QWidget):
-    """Widget per il controllo dei parametri della telecamera"""
+    """Widget for controlling camera parameters"""
     
     def __init__(self, camera: PS3EyeCamera, parent=None):
         super().__init__(parent)
@@ -25,20 +25,20 @@ class CameraControlWidget(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout()
         
-        # Risoluzione e modalità colore
-        resolution_group = QGroupBox("Impostazioni Base")
+        # Base settings
+        resolution_group = QGroupBox("Base Settings")
         resolution_layout = QVBoxLayout()
         
-        # Risoluzione
+        # Resolution
         self.resolution_combo = QComboBox()
         self.resolution_combo.addItems(["QVGA (320x240)", "VGA (640x480)"])
-        resolution_layout.addWidget(QLabel("Risoluzione:"))
+        resolution_layout.addWidget(QLabel("Resolution:"))
         resolution_layout.addWidget(self.resolution_combo)
         
-        # Modalità colore
+        # Color mode
         self.color_mode_combo = QComboBox()
-        self.color_mode_combo.addItems(["Colore", "Scala di grigi"])
-        resolution_layout.addWidget(QLabel("Modalità colore:"))
+        self.color_mode_combo.addItems(["Color", "Grayscale"])
+        resolution_layout.addWidget(QLabel("Color mode:"))
         resolution_layout.addWidget(self.color_mode_combo)
         
         # Frame rate
@@ -51,8 +51,8 @@ class CameraControlWidget(QWidget):
         resolution_group.setLayout(resolution_layout)
         layout.addWidget(resolution_group)
         
-        # Parametri avanzati
-        params_group = QGroupBox("Parametri Avanzati")
+        # Advanced parameters
+        params_group = QGroupBox("Advanced Parameters")
         params_layout = QVBoxLayout()
         
         # Gain
@@ -94,36 +94,36 @@ class CameraControlWidget(QWidget):
         params_group.setLayout(params_layout)
         layout.addWidget(params_group)
         
-        # Flip e rotazione
-        transform_group = QGroupBox("Trasformazioni")
+        # Flip and rotation
+        transform_group = QGroupBox("Transformations")
         transform_layout = QVBoxLayout()
         
-        self.hflip = QCheckBox("Flip orizzontale")
-        self.vflip = QCheckBox("Flip verticale")
+        self.hflip = QCheckBox("Horizontal flip")
+        self.vflip = QCheckBox("Vertical flip")
         self.rotation = QSlider(Qt.Horizontal)
         self.rotation.setRange(-180, 180)
         self.rotation.setValue(0)
         
         transform_layout.addWidget(self.hflip)
         transform_layout.addWidget(self.vflip)
-        transform_layout.addWidget(QLabel("Rotazione:"))
+        transform_layout.addWidget(QLabel("Rotation:"))
         transform_layout.addWidget(self.rotation)
         
         transform_group.setLayout(transform_layout)
         layout.addWidget(transform_group)
         
-        # Connetti i segnali
+        # Connect signals
         self._connect_signals()
         
         self.setLayout(layout)
     
     def _connect_signals(self):
-        # Risoluzione e modalità colore
+        # Resolution and color mode
         self.resolution_combo.currentIndexChanged.connect(self._on_resolution_changed)
         self.color_mode_combo.currentIndexChanged.connect(self._on_color_mode_changed)
         self.framerate_spin.valueChanged.connect(self._on_framerate_changed)
         
-        # Gain e exposure
+        # Gain and exposure
         self.gain_slider.valueChanged.connect(
             lambda v: self.camera.set_parameter(CLEyeCameraParameter.GAIN, v)
         )
@@ -147,7 +147,7 @@ class CameraControlWidget(QWidget):
             lambda v: self.camera.set_parameter(CLEyeCameraParameter.AUTO_WHITEBALANCE, int(v))
         )
         
-        # Flip e rotazione
+        # Flip and rotation
         self.hflip.toggled.connect(
             lambda v: self.camera.set_parameter(CLEyeCameraParameter.HFLIP, int(v))
         )
@@ -160,11 +160,11 @@ class CameraControlWidget(QWidget):
     
     def _on_resolution_changed(self, index):
         resolution = CLEyeCameraResolution.VGA if index == 1 else CLEyeCameraResolution.QVGA
-        # Aggiorna i frame rate disponibili
+        # Update available frame rate
         self.framerate_spin.setRange(15, 75 if resolution == CLEyeCameraResolution.VGA else 125)
     
     def _on_color_mode_changed(self, index):
         color_mode = CLEyeCameraColorMode.COLOR if index == 0 else CLEyeCameraColorMode.GRAYSCALE
     
     def _on_framerate_changed(self, value):
-        pass  # Implementato nella classe principale
+        pass  # Implemented in the main class

@@ -1,3 +1,3 @@
 """
-Package per gli effetti video
+Package for video effects
 """

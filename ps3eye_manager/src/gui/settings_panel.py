@@ -1,5 +1,5 @@
 """
-Widget per le impostazioni della telecamera
+Camera settings widget
 """
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -10,9 +10,9 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from core.ps3eye_camera import CLEyeCameraParameter, CLEyeCameraColorMode, CLEyeCameraResolution
 
 class SettingsPanel(QWidget):
-    """Pannello delle impostazioni della telecamera"""
+    """Camera settings widget"""
     
-    # Segnali per notificare i cambiamenti
+    # Signals to notify changes
     parameter_changed = pyqtSignal(CLEyeCameraParameter, int)
     resolution_changed = pyqtSignal(CLEyeCameraResolution)
     color_mode_changed = pyqtSignal(CLEyeCameraColorMode)
@@ -22,37 +22,37 @@ class SettingsPanel(QWidget):
         self._init_ui()
         
     def _init_ui(self):
-        """Inizializza l'interfaccia utente"""
+        """Initialize UI"""
         layout = QVBoxLayout()
         self.setLayout(layout)
         
-        # Gruppo modalità camera
-        camera_group = QGroupBox("Modalità Camera")
+        # Camera mode group
+        camera_group = QGroupBox("Camera Mode")
         camera_layout = QVBoxLayout()
         camera_group.setLayout(camera_layout)
         
-        # Risoluzione
+        # Resolution
         res_layout = QHBoxLayout()
-        res_layout.addWidget(QLabel("Risoluzione:"))
+        res_layout.addWidget(QLabel("Resolution:"))
         self.resolution_combo = QComboBox()
         self.resolution_combo.addItems(["QVGA (320x240)", "VGA (640x480)"])
         self.resolution_combo.currentIndexChanged.connect(self._on_resolution_changed)
         res_layout.addWidget(self.resolution_combo)
         camera_layout.addLayout(res_layout)
         
-        # Modalità colore
+        # Color mode
         color_layout = QHBoxLayout()
-        color_layout.addWidget(QLabel("Modalità colore:"))
+        color_layout.addWidget(QLabel("Color mode:"))
         self.color_mode_combo = QComboBox()
-        self.color_mode_combo.addItems(["Scala di grigi", "Colore"])
+        self.color_mode_combo.addItems(["Grayscale", "Color"])
         self.color_mode_combo.currentIndexChanged.connect(self._on_color_mode_changed)
         color_layout.addWidget(self.color_mode_combo)
         camera_layout.addLayout(color_layout)
         
         layout.addWidget(camera_group)
         
-        # Gruppo parametri sensore
-        sensor_group = QGroupBox("Parametri Sensore")
+        # Sensor parameters group
+        sensor_group = QGroupBox("Sensor Parameters")
         sensor_layout = QVBoxLayout()
         sensor_group.setLayout(sensor_layout)
         
@@ -61,7 +61,7 @@ class SettingsPanel(QWidget):
         self.auto_gain_cb.stateChanged.connect(lambda state: self._on_auto_param_changed(CLEyeCameraParameter.CLEYE_AUTO_GAIN, state))
         sensor_layout.addWidget(self.auto_gain_cb)
         
-        # Gain manuale
+        # Manual gain
         gain_layout = QHBoxLayout()
         gain_layout.addWidget(QLabel("Gain:"))
         self.gain_slider = QSlider(Qt.Horizontal)
@@ -70,26 +70,26 @@ class SettingsPanel(QWidget):
         gain_layout.addWidget(self.gain_slider)
         sensor_layout.addLayout(gain_layout)
         
-        # Auto Esposizione
-        self.auto_exposure_cb = QCheckBox("Auto Esposizione")
+        # Auto Exposure
+        self.auto_exposure_cb = QCheckBox("Auto Exposure")
         self.auto_exposure_cb.stateChanged.connect(lambda state: self._on_auto_param_changed(CLEyeCameraParameter.CLEYE_AUTO_EXPOSURE, state))
         sensor_layout.addWidget(self.auto_exposure_cb)
         
-        # Esposizione manuale
+        # Manual exposure
         exposure_layout = QHBoxLayout()
-        exposure_layout.addWidget(QLabel("Esposizione:"))
+        exposure_layout.addWidget(QLabel("Exposure:"))
         self.exposure_slider = QSlider(Qt.Horizontal)
         self.exposure_slider.setRange(0, 511)
         self.exposure_slider.valueChanged.connect(lambda value: self._on_param_changed(CLEyeCameraParameter.CLEYE_EXPOSURE, value))
         exposure_layout.addWidget(self.exposure_slider)
         sensor_layout.addLayout(exposure_layout)
         
-        # Auto Bilanciamento del bianco
-        self.auto_wb_cb = QCheckBox("Auto Bilanciamento Bianco")
+        # Auto White Balance
+        self.auto_wb_cb = QCheckBox("Auto White Balance")
         self.auto_wb_cb.stateChanged.connect(lambda state: self._on_auto_param_changed(CLEyeCameraParameter.CLEYE_AUTO_WHITEBALANCE, state))
         sensor_layout.addWidget(self.auto_wb_cb)
         
-        # Bilanciamento del bianco manuale
+        # Manual white balance
         wb_layout = QHBoxLayout()
         wb_layout.addWidget(QLabel("WB:"))
         
@@ -114,25 +114,25 @@ class SettingsPanel(QWidget):
         sensor_layout.addLayout(wb_layout)
         layout.addWidget(sensor_group)
         
-        # Gruppo trasformazioni
-        transform_group = QGroupBox("Trasformazioni")
+        # Transformations group
+        transform_group = QGroupBox("Transformations")
         transform_layout = QVBoxLayout()
         transform_group.setLayout(transform_layout)
         
         # Flip
         flip_layout = QHBoxLayout()
-        self.hflip_cb = QCheckBox("Flip Orizzontale")
+        self.hflip_cb = QCheckBox("Horizontal Flip")
         self.hflip_cb.stateChanged.connect(lambda state: self._on_param_changed(CLEyeCameraParameter.CLEYE_HFLIP, state))
         flip_layout.addWidget(self.hflip_cb)
         
-        self.vflip_cb = QCheckBox("Flip Verticale")
+        self.vflip_cb = QCheckBox("Vertical Flip")
         self.vflip_cb.stateChanged.connect(lambda state: self._on_param_changed(CLEyeCameraParameter.CLEYE_VFLIP, state))
         flip_layout.addWidget(self.vflip_cb)
         transform_layout.addLayout(flip_layout)
         
-        # Rotazione
+        # Rotation
         rotation_layout = QHBoxLayout()
-        rotation_layout.addWidget(QLabel("Rotazione:"))
+        rotation_layout.addWidget(QLabel("Rotation:"))
         self.rotation_spin = QSpinBox()
         self.rotation_spin.setRange(-180, 180)
         self.rotation_spin.valueChanged.connect(lambda value: self._on_param_changed(CLEyeCameraParameter.CLEYE_ROTATION, value))
@@ -150,35 +150,35 @@ class SettingsPanel(QWidget):
         
         layout.addWidget(transform_group)
         
-        # Pulsante Reset
-        reset_btn = QPushButton("Reset Impostazioni")
+        # Reset button
+        reset_btn = QPushButton("Reset Settings")
         reset_btn.clicked.connect(self._reset_settings)
         layout.addWidget(reset_btn)
         
-        # Spazio elastico alla fine
+        # Elastic space at the end
         layout.addStretch()
         
     def _on_param_changed(self, param: CLEyeCameraParameter, value: int):
-        """Gestisce il cambiamento di un parametro"""
+        """Handle parameter change"""
         self.parameter_changed.emit(param, value)
         
     def _on_auto_param_changed(self, param: CLEyeCameraParameter, state: bool):
-        """Gestisce il cambiamento di un parametro automatico"""
+        """Handle automatic parameter change"""
         value = 1 if state == Qt.Checked else 0
         self.parameter_changed.emit(param, value)
         
     def _on_resolution_changed(self, index: int):
-        """Gestisce il cambiamento della risoluzione"""
+        """Handle resolution change"""
         resolution = CLEyeCameraResolution.CLEYE_QVGA if index == 0 else CLEyeCameraResolution.CLEYE_VGA
         self.resolution_changed.emit(resolution)
         
     def _on_color_mode_changed(self, index: int):
-        """Gestisce il cambiamento della modalità colore"""
+        """Handle color mode change"""
         color_mode = CLEyeCameraColorMode.CLEYE_GRAYSCALE if index == 0 else CLEyeCameraColorMode.CLEYE_COLOR
         self.color_mode_changed.emit(color_mode)
         
     def _reset_settings(self):
-        """Resetta tutte le impostazioni ai valori predefiniti"""
+        """Reset all settings to default values"""
         # Reset checkbox
         self.auto_gain_cb.setChecked(True)
         self.auto_exposure_cb.setChecked(True)
@@ -194,22 +194,22 @@ class SettingsPanel(QWidget):
         self.wb_blue_slider.setValue(128)
         self.zoom_slider.setValue(0)
         
-        # Reset altri controlli
+        # Reset other controls
         self.rotation_spin.setValue(0)
         self.resolution_combo.setCurrentIndex(1)  # VGA
         self.color_mode_combo.setCurrentIndex(1)  # Colore
         
     def update_from_camera(self, camera):
-        """Aggiorna i controlli con i valori attuali della telecamera"""
+        """Update controls with current camera values"""
         try:
-            # Aggiorna checkbox
+            # Update checkboxes
             self.auto_gain_cb.setChecked(camera.get_parameter(CLEyeCameraParameter.CLEYE_AUTO_GAIN) == 1)
             self.auto_exposure_cb.setChecked(camera.get_parameter(CLEyeCameraParameter.CLEYE_AUTO_EXPOSURE) == 1)
             self.auto_wb_cb.setChecked(camera.get_parameter(CLEyeCameraParameter.CLEYE_AUTO_WHITEBALANCE) == 1)
             self.hflip_cb.setChecked(camera.get_parameter(CLEyeCameraParameter.CLEYE_HFLIP) == 1)
             self.vflip_cb.setChecked(camera.get_parameter(CLEyeCameraParameter.CLEYE_VFLIP) == 1)
             
-            # Aggiorna slider
+            # Update sliders
             self.gain_slider.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_GAIN))
             self.exposure_slider.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_EXPOSURE))
             self.wb_red_slider.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_WHITEBALANCE_RED))
@@ -217,8 +217,8 @@ class SettingsPanel(QWidget):
             self.wb_blue_slider.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_WHITEBALANCE_BLUE))
             self.zoom_slider.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_ZOOM))
             
-            # Aggiorna altri controlli
+            # Update other controls
             self.rotation_spin.setValue(camera.get_parameter(CLEyeCameraParameter.CLEYE_ROTATION))
             
         except Exception as e:
-            print(f"Errore nell'aggiornamento dei controlli: {e}")
+            print(f"Error updating controls: {e}")

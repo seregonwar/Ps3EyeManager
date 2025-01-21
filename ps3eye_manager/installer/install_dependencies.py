@@ -1,6 +1,6 @@
 """
-Script di installazione per PS3 Eye Manager
-Installa tutti i driver e le dipendenze necessarie
+Installation script for PS3 Eye Manager
+Installs all necessary drivers and dependencies
 """
 import os
 import sys
@@ -14,20 +14,20 @@ import logging
 from pathlib import Path
 
 def is_admin():
-    """Verifica se lo script è in esecuzione come amministratore"""
+    """Check if the script is running as administrator"""
     try:
         return ctypes.windll.shell32.IsUserAnAdmin()
     except:
         return False
 
 def run_as_admin():
-    """Riavvia lo script come amministratore"""
+    """Restart the script as administrator"""
     ctypes.windll.shell32.ShellExecuteW(
         None, "runas", sys.executable, " ".join(sys.argv), None, 1
     )
 
 def setup_logging():
-    """Configura il logging"""
+    """Configure logging"""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -38,25 +38,25 @@ def setup_logging():
     )
 
 def check_python():
-    """Verifica che Python sia installato correttamente"""
-    logging.info("Verifica installazione Python...")
+    """Check if Python is installed correctly"""
+    logging.info("Checking Python installation...")
     if sys.version_info < (3, 8):
-        logging.error("Python 3.8 o superiore è richiesto")
+        logging.error("Python 3.8 or higher is required")
         return False
     return True
 
 def install_pip_package(package):
-    """Installa un pacchetto pip"""
+    """Install a pip package"""
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", package], check=True)
-        logging.info(f"Pacchetto {package} installato con successo")
+        logging.info(f"Package {package} installed successfully")
         return True
     except subprocess.CalledProcessError as e:
-        logging.error(f"Errore nell'installazione di {package}: {e}")
+        logging.error(f"Error installing {package}: {e}")
         return False
 
 def install_python_dependencies():
-    """Installa le dipendenze Python"""
+    """Install Python dependencies"""
     dependencies = [
         "numpy",
         "opencv-python",
@@ -65,25 +65,25 @@ def install_python_dependencies():
         "pywin32"
     ]
     
-    logging.info("Installazione dipendenze Python...")
+    logging.info("Installing Python dependencies...")
     for dep in dependencies:
         if not install_pip_package(dep):
             return False
     return True
 
 def download_file(url, filename):
-    """Scarica un file da un URL"""
+    """Download a file from a URL"""
     try:
-        logging.info(f"Download di {filename}...")
+        logging.info(f"Downloading {filename}...")
         urllib.request.urlretrieve(url, filename)
         return True
     except Exception as e:
-        logging.error(f"Errore nel download di {filename}: {e}")
+        logging.error(f"Error downloading {filename}: {e}")
         return False
 
 def install_obs():
-    """Installa OBS Studio con Virtual Camera"""
-    logging.info("Installazione OBS Studio...")
+    """Install OBS Studio with Virtual Camera"""
+    logging.info("Installing OBS Studio...")
     
     # Download OBS
     obs_url = "https://cdn-fastly.obsproject.com/downloads/OBS-Studio-29.1.3-Full-Installer-x64.exe"
@@ -92,19 +92,19 @@ def install_obs():
     if not download_file(obs_url, obs_installer):
         return False
     
-    # Installa OBS silenziosamente con Virtual Camera
+    # Install OBS silently with Virtual Camera
     try:
         subprocess.run([obs_installer, "/S", "/virtual-camera"], check=True)
-        logging.info("OBS Studio installato con successo")
+        logging.info("OBS Studio installed successfully")
         os.remove(obs_installer)
         return True
     except subprocess.CalledProcessError as e:
-        logging.error(f"Errore nell'installazione di OBS: {e}")
+        logging.error(f"Error installing OBS: {e}")
         return False
 
 def install_unity_capture():
-    """Installa Unity Capture come backup"""
-    logging.info("Installazione Unity Capture...")
+    """Install Unity Capture as a backup"""
+    logging.info("Installing Unity Capture...")
     
     # Download Unity Capture
     unity_url = "https://github.com/schellingb/UnityCapture/releases/download/v1.0.4/UnityCaptureDriver64.zip"
@@ -114,35 +114,35 @@ def install_unity_capture():
         return False
     
     try:
-        # Estrai il driver
+        # Extract the driver
         with zipfile.ZipFile(unity_zip, 'r') as zip_ref:
             zip_ref.extractall("unity_capture")
-        
-        # Installa il driver
+
+        # Install the driver
         driver_path = Path("unity_capture/UnityCaptureDriver64/Install.bat")
         if driver_path.exists():
             subprocess.run([driver_path], check=True, shell=True)
-            logging.info("Unity Capture installato con successo")
+            logging.info("Unity Capture installed successfully")
             shutil.rmtree("unity_capture")
             os.remove(unity_zip)
             return True
         else:
-            logging.error("File di installazione Unity Capture non trovato")
+            logging.error("Unity Capture installation file not found")
             return False
     except Exception as e:
-        logging.error(f"Errore nell'installazione di Unity Capture: {e}")
+        logging.error(f"Error installing Unity Capture: {e}")
         return False
 
 def install_ffmpeg():
-    """Installa FFmpeg"""
-    logging.info("Installazione FFmpeg...")
+    """Install FFmpeg"""
+    logging.info("Installing FFmpeg...")
     try:
-        # Usa winget per installare FFmpeg
+        # Use winget to install FFmpeg
         subprocess.run(["winget", "install", "FFmpeg"], check=True)
-        logging.info("FFmpeg installato con successo")
+        logging.info("FFmpeg installed successfully")
         return True
     except subprocess.CalledProcessError:
-        # Se winget fallisce, scarica manualmente
+        # If winget fails, download manually
         ffmpeg_url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
         ffmpeg_zip = "ffmpeg.zip"
         
@@ -150,43 +150,43 @@ def install_ffmpeg():
             return False
         
         try:
-            # Estrai FFmpeg
+            # Extract FFmpeg
             with zipfile.ZipFile(ffmpeg_zip, 'r') as zip_ref:
                 zip_ref.extractall("ffmpeg")
             
-            # Copia i file necessari in System32
+            # Copy necessary files to System32
             ffmpeg_dir = next(Path("ffmpeg").glob("ffmpeg-*"))
             for exe in ["ffmpeg.exe", "ffplay.exe", "ffprobe.exe"]:
                 src = ffmpeg_dir / "bin" / exe
                 dst = Path(os.environ["SystemRoot"]) / "System32" / exe
                 shutil.copy2(src, dst)
             
-            logging.info("FFmpeg installato manualmente con successo")
+            logging.info("FFmpeg installed manually successfully")
             shutil.rmtree("ffmpeg")
             os.remove(ffmpeg_zip)
             return True
         except Exception as e:
-            logging.error(f"Errore nell'installazione manuale di FFmpeg: {e}")
+            logging.error(f"Error installing FFmpeg manually: {e}")
             return False
 
 def main():
-    """Funzione principale di installazione"""
-    # Verifica privilegi amministrativi
+    """Main installation function"""
+    # Check administrative privileges
     if not is_admin():
-        logging.warning("Riavvio come amministratore...")
+        logging.warning("Restarting as administrator...")
         run_as_admin()
         return
     
     setup_logging()
-    logging.info("=== Installazione PS3 Eye Manager ===")
+    logging.info("=== Installation of PS3 Eye Manager ===")
     
-    # Verifica requisiti
+    # Check requirements
     if not check_python():
         return
     
-    # Installa le dipendenze nell'ordine corretto
+    # Install dependencies in the correct order
     steps = [
-        ("Dipendenze Python", install_python_dependencies),
+        ("Python dependencies", install_python_dependencies),
         ("OBS Studio", install_obs),
         ("Unity Capture", install_unity_capture),
         ("FFmpeg", install_ffmpeg)
@@ -194,18 +194,18 @@ def main():
     
     success = True
     for name, func in steps:
-        logging.info(f"\nInstallazione {name}...")
+        logging.info(f"\nInstallation of {name}...")
         if not func():
-            logging.error(f"Errore nell'installazione di {name}")
+            logging.error(f"Error installing {name}")
             success = False
             break
     
     if success:
-        logging.info("\n=== Installazione completata con successo ===")
-        logging.info("Riavvia il computer prima di usare PS3 Eye Manager")
+        logging.info("\n=== Installation completed successfully ===")
+        logging.info("Restart the computer before using PS3 Eye Manager")
     else:
-        logging.error("\n=== Installazione fallita ===")
-        logging.error("Controlla il file install.log per i dettagli")
+        logging.error("\n=== Installation failed ===")
+        logging.error("Check the install.log file for details")
 
 if __name__ == "__main__":
     main()

@@ -1,5 +1,5 @@
 """
-Modulo per la gestione del driver della webcam virtuale
+Module for managing the virtual camera driver
 """
 import os
 import sys
@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 class BITMAPINFOHEADER(ctypes.Structure):
-    """Struttura Windows per le informazioni dell'immagine"""
+    """Windows structure for image information"""
     _fields_ = [
         ("biSize", wintypes.DWORD),
         ("biWidth", wintypes.LONG),
@@ -34,7 +34,7 @@ class BITMAPINFOHEADER(ctypes.Structure):
     ]
 
 class VirtualCamera:
-    """Gestisce il driver della webcam virtuale"""
+    """Manages the virtual camera driver"""
     
     def __init__(self):
         self.running = False
@@ -46,38 +46,38 @@ class VirtualCamera:
         
     def start(self, width: int = 640, height: int = 480, fps: int = 30, frame_callback=None) -> bool:
         """
-        Avvia la webcam virtuale
+        Start the virtual camera
         
         Args:
-            width: Larghezza del frame
-            height: Altezza del frame
+            width: Frame width
+            height: Frame height
             fps: Frame rate
-            frame_callback: Callback chiamato quando serve un nuovo frame
+            frame_callback: Callback called when a new frame is needed
             
         Returns:
-            bool: True se l'avvio è riuscito
+            bool: True if the start is successful
         """
         try:
             self._frame_callback = frame_callback
             
-            # Dimensione del buffer condiviso
+            # Shared memory buffer size
             buffer_size = width * height * 3  # BGR 24-bit
             
             try:
-                # Crea/apri la memoria condivisa
+                # Create/open shared memory
                 security_attributes = win32security.SECURITY_ATTRIBUTES()
                 security_attributes.bInheritHandle = True
                 
                 self._shared_memory = mmap.mmap(
-                    -1,  # Crea nuovo mapping
+                    -1,  # Create new mapping
                     buffer_size,
                     self._map_name,
                     mmap.ACCESS_WRITE
                 )
                 
-                logging.info(f"Memoria condivisa creata: {width}x{height}@{fps}fps")
+                logging.info(f"Shared memory created: {width}x{height}@{fps}fps")
                 
-                # Avvia il thread di invio frame
+                # Start frame sending thread
                 self.running = True
                 self.thread = threading.Thread(target=self._stream_loop)
                 self.thread.daemon = True
@@ -86,16 +86,16 @@ class VirtualCamera:
                 return True
                 
             except Exception as e:
-                logging.error(f"Errore nella creazione della memoria condivisa: {e}")
+                logging.error(f"Error creating shared memory: {e}")
                 return False
             
         except Exception as e:
-            logging.error(f"Errore nell'avvio della webcam virtuale: {e}")
+            logging.error(f"Error starting virtual camera: {e}")
             self.cleanup()
             return False
             
     def _stream_loop(self):
-        """Loop principale per lo streaming dei frame"""
+        """Main loop for streaming frames"""
         last_frame_time = time.time()
         frame_interval = 1.0 / 30  # 30 FPS
         
@@ -103,16 +103,16 @@ class VirtualCamera:
             try:
                 current_time = time.time()
                 
-                # Rispetta il frame rate
+                # Respect the frame rate
                 if current_time - last_frame_time < frame_interval:
                     time.sleep(0.001)
                     continue
                 
-                # Ottieni il frame dal callback
+                # Get the frame from the callback
                 if self._frame_callback:
                     frame = self._frame_callback()
                     if frame is not None:
-                        # Copia il frame nella memoria condivisa
+                        # The frame is already in BGR format, write it directly
                         with self._lock:
                             self._shared_memory.seek(0)
                             self._shared_memory.write(frame.tobytes())
@@ -120,26 +120,33 @@ class VirtualCamera:
                 last_frame_time = current_time
                 
             except Exception as e:
-                logging.error(f"Errore nello streaming del frame: {e}")
+                logging.error(f"Error streaming frame: {e}")
                 time.sleep(0.1)
                 
     def stop(self):
-        """Ferma la webcam virtuale"""
+        """Stop the virtual camera"""
         self.running = False
         if self.thread:
             self.thread.join(timeout=5)
+            self.thread = None
         self.cleanup()
         
     def cleanup(self):
-        """Pulisce le risorse"""
+        """Clean up resources"""
         if self._shared_memory:
             try:
                 self._shared_memory.close()
+                # Ensure the shared memory is removed
+                try:
+                    import win32file
+                    win32file.CloseHandle(int(self._shared_memory.fileno()))
+                except:
+                    pass
             except Exception as e:
-                logging.error(f"Errore nella chiusura della memoria condivisa: {e}")
+                logging.error(f"Error closing shared memory: {e}")
             finally:
                 self._shared_memory = None
             
     def __del__(self):
-        """Cleanup quando l'oggetto viene distrutto"""
+        """Cleanup when the object is destroyed"""
         self.stop()

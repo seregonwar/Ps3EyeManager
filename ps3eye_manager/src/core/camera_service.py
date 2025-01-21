@@ -1,5 +1,5 @@
 """
-Servizio per la gestione della telecamera PS3 Eye
+Service for managing the PS3 Eye camera
 """
 import os
 import time
@@ -9,12 +9,13 @@ import threading
 import numpy as np
 from pathlib import Path
 from typing import Optional, Dict, Any
+import cv2
 
 from core.ps3eye_camera import PS3EyeCamera, CLEyeCameraColorMode, CLEyeCameraResolution, CLEyeCameraParameter
 from core.virtual_camera import VirtualCamera
 
 class CLEyeService:
-    """Servizio per la gestione della telecamera PS3 Eye"""
+    """Service for managing the PS3 Eye camera"""
     
     def __init__(self):
         self.camera = PS3EyeCamera()
@@ -31,32 +32,30 @@ class CLEyeService:
         
     def start(self, frame_callback=None, enable_virtual_camera=True) -> bool:
         """
-        Avvia il servizio
+        Start the service
         
         Args:
-            frame_callback: Funzione da chiamare quando arriva un nuovo frame
-            enable_virtual_camera: Se True, avvia anche la webcam virtuale
+            frame_callback: Function to call when a new frame is received
+            enable_virtual_camera: If True, also start the virtual camera
             
         Returns:
-            bool: True se il servizio è stato avviato con successo
+            bool: True if the service was started successfully
         """
         try:
             self._frame_callback = frame_callback
             self._virtual_camera_enabled = enable_virtual_camera
             
-            # Cerca le telecamere
+            # Search for cameras
             camera_count = self.camera.get_camera_count()
             if camera_count == 0:
-                raise RuntimeError("Nessuna telecamera trovata")
-            logging.info(f"Telecamere trovate: {camera_count}")
+                raise RuntimeError("No camera found")
+            logging.info(f"Cameras found: {camera_count}")
             
-            # Ottieni l'UUID della prima telecamera
+            # Get the UUID of the first camera
             uuid = self.camera.get_camera_uuid(0)
-            if uuid.Data1 == 0 and uuid.Data2 == 0 and uuid.Data3 == 0 and all(b == 0 for b in uuid.Data4):
-                raise RuntimeError("UUID telecamera non valido")
-            logging.info(f"UUID della telecamera: {uuid.Data1:08x}-{uuid.Data2:04x}-{uuid.Data3:04x}-{''.join([f'{b:02x}' for b in uuid.Data4])}")
+            logging.info(f"Camera UUID: {uuid.Data1:08x}-{uuid.Data2:04x}-{uuid.Data3:04x}-{''.join([f'{b:02x}' for b in uuid.Data4])}")
             
-            # Inizializza la telecamera
+            # Initialize the camera
             success = self.camera.create_camera(
                 uuid,
                 CLEyeCameraColorMode.CLEYE_COLOR,
@@ -64,17 +63,17 @@ class CLEyeService:
                 30  # 30 FPS
             )
             if not success:
-                raise RuntimeError("Impossibile inizializzare la telecamera")
-            logging.info("Telecamera inizializzata")
+                raise RuntimeError("Unable to initialize the camera")
+            logging.info("Camera initialized")
             
-            # Configura i parametri
+            # Configure parameters
             self._configure_camera_parameters()
             
-            # Avvia la cattura
+            # Start capture
             if not self.camera.start_camera():
-                raise RuntimeError("Impossibile avviare la cattura")
+                raise RuntimeError("Unable to start capture")
                 
-            # Avvia la webcam virtuale se richiesto
+            # Start virtual camera if requested
             if self._virtual_camera_enabled:
                 if not self.virtual_camera.start(
                     width=640,
@@ -82,10 +81,10 @@ class CLEyeService:
                     fps=30,
                     frame_callback=self.get_frame
                 ):
-                    logging.error("Impossibile avviare la webcam virtuale")
+                    logging.error("Unable to start virtual camera")
                     self._virtual_camera_enabled = False
             
-            # Avvia il thread di cattura
+            # Start capture thread
             self.running = True
             self._start_time = time.time()
             self._frame_count = 0
@@ -93,55 +92,71 @@ class CLEyeService:
             self.capture_thread.daemon = True
             self.capture_thread.start()
             
-            logging.info("Cattura avviata")
+            logging.info("Capture started")
             return True
             
         except Exception as e:
-            logging.error(f"Errore nell'avvio del servizio: {e}")
+            logging.error(f"Error starting service: {e}")
             self.cleanup()
             return False
 
     def _capture_loop(self):
-        """Loop di cattura dei frame"""
+        """Capture loop for frames"""
         frame_count = 0
         last_fps_time = time.time()
         last_frame_time = time.time()
         error_count = 0
+        consecutive_null_frames = 0
         MIN_FRAME_INTERVAL = 1.0 / 60  # Max 60 FPS
-        MAX_ERRORS = 10  # Numero massimo di errori consecutivi
+        MAX_ERRORS = 10  # Maximum number of consecutive errors
+        MAX_NULL_FRAMES = 30  # Maximum number of consecutive null frames
         
         while self.running:
             try:
                 current_time = time.time()
                 
-                # Limita il frame rate
+                # Limit frame rate
                 if current_time - last_frame_time < MIN_FRAME_INTERVAL:
-                    time.sleep(0.001)  # Breve pausa
+                    time.sleep(0.001)  # Short pause
                     continue
                 
-                # Cattura il frame
-                frame = self.camera.get_frame(timeout=100)
-                if frame is None:
+                # Capture frame
+                try:
+                    frame = self.camera.get_frame(timeout=100)
+                except Exception as e:
+                    logging.error(f"Error during frame capture: {e}")
                     error_count += 1
                     if error_count > MAX_ERRORS:
-                        logging.error("Troppi errori consecutivi nella cattura dei frame. Riavvio della telecamera...")
+                        logging.error("Too many consecutive errors in frame capture. Restarting camera...")
                         self._restart_camera()
                         error_count = 0
                     continue
                 
+                if frame is None:
+                    consecutive_null_frames += 1
+                    if consecutive_null_frames > MAX_NULL_FRAMES:
+                        logging.error("Too many consecutive null frames. Restarting camera...")
+                        self._restart_camera()
+                        consecutive_null_frames = 0
+                    continue
+                
+                consecutive_null_frames = 0  # Reset contatore frame nulli
                 error_count = 0  # Reset del contatore errori
                     
-                # Aggiorna il frame corrente e notifica
+                # Update current frame and notify
                 with self._frame_lock:
                     self._current_frame = frame
                     if self._frame_callback:
-                        self._frame_callback(frame)
+                        try:    
+                            self._frame_callback(frame)
+                        except Exception as e:
+                            logging.error(f"Error in frame callback: {e}")
                     
-                # Aggiorna statistiche FPS
+                # Update FPS statistics
                 frame_count += 1
                 if current_time - last_fps_time >= 2.0:
                     fps = frame_count / (current_time - last_fps_time)
-                    logging.info(f"Frame catturati: {self._frame_count}, FPS medio: {fps:.2f}")
+                    logging.info(f"Frames captured: {self._frame_count}, Average FPS: {fps:.2f}")
                     frame_count = 0
                     last_fps_time = current_time
                     
@@ -149,22 +164,25 @@ class CLEyeService:
                 last_frame_time = current_time
                 
             except Exception as e:
+                logging.error(f"Error in capture loop: {e}")
                 error_count += 1
-                logging.error(f"Errore nella cattura del frame: {e}")
                 if error_count > MAX_ERRORS:
-                    logging.error("Troppi errori consecutivi. Riavvio della telecamera...")
+                    logging.error("Too many consecutive errors in loop. Restarting camera...")
                     self._restart_camera()
                     error_count = 0
-                else:
-                    time.sleep(0.1)
 
     def _restart_camera(self):
-        """Riavvia la telecamera in caso di errori"""
+        """Restart the camera in case of errors"""
         try:
+            # Stop virtual camera if active
+            if self._virtual_camera_enabled:
+                self.virtual_camera.stop()
+            
+            # Stop and destroy the camera
             self.camera.stop_camera()
             self.camera.destroy_camera()
             
-            # Ricrea la telecamera
+            # Recreate the camera
             uuid = self.camera.get_camera_uuid(0)
             success = self.camera.create_camera(
                 uuid,
@@ -173,44 +191,62 @@ class CLEyeService:
                 30
             )
             if not success:
-                raise RuntimeError("Impossibile reinizializzare la telecamera")
+                raise RuntimeError("Unable to reinitialize the camera")
                 
-            # Riconfigura e riavvia
+            # Reconfigure and restart
             self._configure_camera_parameters()
             if not self.camera.start_camera():
-                raise RuntimeError("Impossibile riavviare la cattura")
+                raise RuntimeError("Unable to restart capture")
+            
+            # Restart virtual camera if active
+            if self._virtual_camera_enabled:
+                if not self.virtual_camera.start(
+                    width=640,
+                    height=480,
+                    fps=30,
+                    frame_callback=self.get_frame
+                ):
+                    logging.error("Unable to restart virtual camera")
+                    self._virtual_camera_enabled = False
                 
-            logging.info("Telecamera riavviata con successo")
+            logging.info("Camera restarted successfully")
             
         except Exception as e:
-            logging.error(f"Errore nel riavvio della telecamera: {e}")
-            # In caso di errore fatale, fermiamo il servizio
+            logging.error(f"Error restarting camera: {e}")
+            # In case of fatal error, stop the service
             self.running = False
 
     def get_frame(self) -> Optional[np.ndarray]:
         """
-        Ottiene l'ultimo frame disponibile
+        Get the last available frame
         
         Returns:
-            Optional[np.ndarray]: Il frame se disponibile, None altrimenti
+            Optional[np.ndarray]: The frame if available, None otherwise
         """
         with self._frame_lock:
-            return self._current_frame.copy() if self._current_frame is not None else None
+            if self._current_frame is not None:
+                if self._virtual_camera_enabled:
+                    # For virtual camera, BGR format is required
+                    return self._current_frame
+                else:
+                    # For display, we use RGBA
+                    return cv2.cvtColor(self._current_frame, cv2.COLOR_BGR2RGBA)
+            return None
 
     def stop(self):
-        """Ferma il servizio"""
+        """Stop the service"""
         self.running = False
         if self.capture_thread:
             self.capture_thread.join()
         
-        # Ferma la webcam virtuale
+        # Stop virtual camera
         if self._virtual_camera_enabled:
             self.virtual_camera.stop()
             
         self.cleanup()
 
     def cleanup(self):
-        """Esegue la pulizia delle risorse"""
+        """Clean up resources"""
         if self.camera:
             self.camera.stop_camera()
             self.camera.destroy_camera()
@@ -219,42 +255,42 @@ class CLEyeService:
             self.virtual_camera.cleanup()
 
     def __del__(self):
-        """Cleanup quando l'oggetto viene distrutto"""
+        """Cleanup when the object is destroyed"""
         self.stop()
 
     def _configure_camera_parameters(self):
-        """Configura i parametri della telecamera con gestione errori"""
+        """Configure camera parameters with error handling"""
         params = [
             (CLEyeCameraParameter.CLEYE_AUTO_GAIN, 0),
             (CLEyeCameraParameter.CLEYE_AUTO_EXPOSURE, 0),
             (CLEyeCameraParameter.CLEYE_AUTO_WHITEBALANCE, 0),
-            (CLEyeCameraParameter.CLEYE_GAIN, 30),  # Aumentato per migliore luminosità
-            (CLEyeCameraParameter.CLEYE_EXPOSURE, 50),  # Ridotto per evitare sovraesposizione
-            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_RED, 60),  # Bilanciamento del bianco migliorato
+            (CLEyeCameraParameter.CLEYE_GAIN, 30),  # Increased for better brightness
+            (CLEyeCameraParameter.CLEYE_EXPOSURE, 50),  # Reduced to avoid overexposure
+            (CLEyeCameraParameter.CLEYE_WHITEBALANCE_RED, 60),  # Improved white balance
             (CLEyeCameraParameter.CLEYE_WHITEBALANCE_GREEN, 55),
             (CLEyeCameraParameter.CLEYE_WHITEBALANCE_BLUE, 65),
-            (CLEyeCameraParameter.CLEYE_HFLIP, 0),  # No flip orizzontale
-            (CLEyeCameraParameter.CLEYE_VFLIP, 0),  # No flip verticale
-            (CLEyeCameraParameter.CLEYE_HKEYSTONE, 0),  # No correzione keystone
+            (CLEyeCameraParameter.CLEYE_HFLIP, 0),  # No horizontal flip
+            (CLEyeCameraParameter.CLEYE_VFLIP, 0),  # No vertical flip
+            (CLEyeCameraParameter.CLEYE_HKEYSTONE, 0),  # No keystone correction
             (CLEyeCameraParameter.CLEYE_VKEYSTONE, 0),
-            (CLEyeCameraParameter.CLEYE_LENSCORRECTION1, 0),  # No correzione lente
+            (CLEyeCameraParameter.CLEYE_LENSCORRECTION1, 0),  # No lens correction
             (CLEyeCameraParameter.CLEYE_LENSCORRECTION2, 0),
             (CLEyeCameraParameter.CLEYE_LENSCORRECTION3, 0),
-            (CLEyeCameraParameter.CLEYE_LENSBRIGHTNESS, 20)  # Luminosità lente moderata
+            (CLEyeCameraParameter.CLEYE_LENSBRIGHTNESS, 20)  # Lens brightness moderate
         ]
         
         for param, value in params:
             if not self.camera.set_parameter(param, value):
-                logging.warning(f"Impossibile impostare il parametro {param.name} a {value}")
+                logging.warning(f"Unable to set parameter {param.name} to {value}")
         
-        logging.info("Parametri della telecamera configurati")
+        logging.info("Camera parameters configured")
 
     def get_status(self) -> Dict[str, Any]:
         """
-        Ottiene lo stato corrente del servizio
+        Get the current status of the service
         
         Returns:
-            Dict[str, Any]: Stato del servizio
+            Dict[str, Any]: Service status
         """
         status = {
             'running': self.running,

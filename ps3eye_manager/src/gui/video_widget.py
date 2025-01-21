@@ -1,5 +1,5 @@
 """
-Widget per la visualizzazione del video
+Video widget for displaying video from the camera
 """
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtCore import Qt
@@ -7,7 +7,7 @@ from PyQt5.QtGui import QImage, QPixmap
 import numpy as np
 
 class VideoWidget(QLabel):
-    """Widget per la visualizzazione del video dalla telecamera"""
+    """Video widget for displaying video from the camera"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -16,12 +16,12 @@ class VideoWidget(QLabel):
         self.setStyleSheet("background-color: black;")
     
     def update_frame(self, frame):
-        """Aggiorna il frame visualizzato"""
+        """Update the displayed frame"""
         if frame is None:
             return
         
         try:
-            # Converti il frame per la visualizzazione
+            # Convert frame for display
             if frame.ndim == 2:  # Grayscale
                 h, w = frame.shape
                 bytes_per_line = w
@@ -35,7 +35,7 @@ class VideoWidget(QLabel):
                     bytes_per_line = 4 * w
                     qimg = QImage(frame.data, w, h, bytes_per_line, QImage.Format_RGBA8888)
             
-            # Scala il frame mantenendo le proporzioni
+            # Scale frame maintaining proportions
             pixmap = QPixmap.fromImage(qimg)
             scaled_pixmap = pixmap.scaled(
                 self.size(),
@@ -46,12 +46,12 @@ class VideoWidget(QLabel):
             self.setPixmap(scaled_pixmap)
             
         except Exception as e:
-            print(f"Errore nell'aggiornamento del frame: {e}")
+            print(f"Error updating frame: {e}")
     
     def resizeEvent(self, event):
-        """Gestisce il ridimensionamento del widget"""
+        """Handle widget resizing"""
         super().resizeEvent(event)
-        # Aggiorna le dimensioni del pixmap se presente
+        # Update pixmap size if present
         if self.pixmap():
             scaled_pixmap = self.pixmap().scaled(
                 self.size(),

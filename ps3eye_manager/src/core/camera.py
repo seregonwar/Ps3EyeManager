@@ -11,7 +11,7 @@ import platform
 import numpy as np
 from typing import Tuple, Optional, Dict, Any
 
-from core.camera_client import CameraClient
+
 
 class GUID(ctypes.Structure):
     _fields_ = [
@@ -22,17 +22,17 @@ class GUID(ctypes.Structure):
     ]
 
 class CLEyeCameraResolution(IntEnum):
-    """Risoluzioni supportate dalla PS3 Eye"""
+    """Supported resolutions for PS3 Eye"""
     QVGA = 0    # 320x240
     VGA = 1     # 640x480
 
 class CLEyeCameraColorMode(IntEnum):
-    """Modalità colore supportate"""
+    """Supported color modes"""
     GRAYSCALE = 0
     COLOR = 1
 
 class CLEyeCameraParameter(IntEnum):
-    """Parametri configurabili della telecamera"""
+    """Configurable camera parameters"""
     GAIN = 0
     EXPOSURE = 1
     ZOOM = 2
@@ -47,31 +47,30 @@ class CLEyeCameraParameter(IntEnum):
     ROTATION = 11
 
 class CameraError(Exception):
-    """Eccezione per errori della telecamera"""
+    """Exception for camera errors"""
     pass
 
 class PS3EyeCamera:
-    """Classe per il controllo della PS3 Eye Camera"""
+    """Class for controlling the PS3 Eye Camera"""
     
     def __init__(self, settings=None):
-        """Inizializza la telecamera"""
+        """Initialize the camera"""
         self.settings = settings
         self._frame_buffer = None
         self._frame_dimensions = (0, 0)
-        self._client = CameraClient()
         self._setup_camera()
     
     def _setup_camera(self):
-        """Configura la telecamera"""
+        """Configure the camera"""
         try:
             if not self._client.connect():
-                raise CameraError("Impossibile connettersi al server della telecamera")
+                raise CameraError("Unable to connect to camera server")
             
-            # Configura i callback
+            # Set the callbacks
             self._client.set_frame_callback(self._on_frame)
             self._client.set_error_callback(self._on_error)
             
-            # Invia le impostazioni iniziali
+            # Send initial settings
             config = {
                 'resolution': CLEyeCameraResolution.VGA,
                 'color_mode': CLEyeCameraColorMode.COLOR,
@@ -88,15 +87,15 @@ class PS3EyeCamera:
                     config['framerate'] = camera_settings.get('fps', 60)
             
             if not self._client.send_command('configure', config):
-                raise CameraError("Impossibile configurare la telecamera")
+                raise CameraError("Unable to configure camera")
             
-            logging.info("Telecamera configurata con successo")
+            logging.info("Camera configured successfully")
             
         except Exception as e:
-            raise CameraError(f"Errore nella configurazione della telecamera: {e}")
+            raise CameraError(f"Error configuring camera: {e}")
     
     def _on_frame(self, frame_data: Dict[str, Any]):
-        """Callback per i frame video"""
+        """Callback for video frames"""
         try:
             if 'data' in frame_data and 'shape' in frame_data:
                 shape = tuple(frame_data['shape'])
@@ -106,42 +105,42 @@ class PS3EyeCamera:
                 ).reshape(shape)
                 self._frame_dimensions = (shape[1], shape[0])  # width, height
         except Exception as e:
-            logging.error(f"Errore nella gestione del frame: {e}")
+            logging.error(f"Error handling frame: {e}")
     
     def _on_error(self, error_info: Dict[str, Any]):
-        """Callback per gli errori"""
-        logging.error(f"Errore dalla telecamera: {error_info}")
+        """Callback for errors"""
+        logging.error(f"Camera error: {error_info}")
     
     def start_camera(self) -> bool:
-        """Avvia la cattura video"""
+        """Start video capture"""
         return self._client.send_command('start')
     
     def stop_camera(self) -> bool:
-        """Ferma la cattura video"""
+        """Stop video capture"""
         return self._client.send_command('stop')
     
     def get_frame(self) -> Optional[np.ndarray]:
-        """Cattura un frame dalla telecamera"""
+        """Capture a frame from the camera"""
         return self._frame_buffer.copy() if self._frame_buffer is not None else None
     
     def set_parameter(self, param: CLEyeCameraParameter, value: int) -> bool:
-        """Imposta un parametro della telecamera"""
+        """Set a camera parameter"""
         return self._client.send_command('set_parameter', {
             'parameter': param,
             'value': value
         })
     
     def get_parameter(self, param: CLEyeCameraParameter) -> Optional[int]:
-        """Legge un parametro della telecamera"""
-        # TODO: implementare la lettura dei parametri
+        """Read a camera parameter"""
+        # TODO: implement reading parameters
         return None
     
     @property
     def frame_dimensions(self) -> Tuple[int, int]:
-        """Restituisce le dimensioni del frame (width, height)"""
+        """Returns the frame dimensions (width, height)"""
         return self._frame_dimensions
     
     def __del__(self):
-        """Cleanup quando l'oggetto viene distrutto"""
+        """Cleanup when the object is destroyed"""
         if hasattr(self, '_client'):
             self._client.disconnect()

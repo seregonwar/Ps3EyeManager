@@ -1,5 +1,5 @@
 """
-Configurazione centralizzata del logging per PS3 Eye Manager
+Centralized logging configuration for PS3 Eye Manager
 """
 import os
 import sys
@@ -10,52 +10,52 @@ from datetime import datetime
 
 def setup_logging(log_dir: str = None, debug: bool = False) -> None:
     """
-    Configura il sistema di logging per l'applicazione
+    Configure the logging system for the application
     
     Args:
-        log_dir: Directory dove salvare i file di log. Se None, usa la directory predefinita
-        debug: Se True, imposta il livello di logging a DEBUG
+        log_dir: Directory to save log files. If None, use the default directory
+        debug: If True, set the logging level to DEBUG
     """
     if log_dir is None:
         log_dir = Path.home() / "PS3EyeManager" / "logs"
     
-    # Crea la directory dei log se non esiste
+    # Create the log directory if it does not exist
     os.makedirs(log_dir, exist_ok=True)
     
-    # Genera il nome del file di log con data
+    # Generate the log file name with the date
     log_file = Path(log_dir) / f"ps3eye_manager_{datetime.now().strftime('%Y%m%d')}.log"
     
-    # Configura il formato del log
+    # Configure the log format
     log_format = logging.Formatter(
         '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
     )
     
-    # Handler per il file
+    # File handler
     file_handler = logging.handlers.RotatingFileHandler(
         log_file,
-        maxBytes=10*1024*1024,  # 10MB
+        maxBytes=10 * 1024 * 1024,  # 10MB
         backupCount=5,
         encoding='utf-8'
     )
     file_handler.setFormatter(log_format)
     
-    # Handler per la console
+    # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(log_format)
     
-    # Configura il logger root
+    # Configure the root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG if debug else logging.INFO)
     
-    # Rimuovi handler esistenti
+    # Remove existing handlers
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
     
-    # Aggiungi i nuovi handler
+    # Add new handlers
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
-    # Logger specifici per componenti
+    # Specific loggers for components
     loggers = {
         'camera': logging.getLogger('ps3eye.camera'),
         'server': logging.getLogger('ps3eye.server'),
@@ -63,10 +63,10 @@ def setup_logging(log_dir: str = None, debug: bool = False) -> None:
         'driver': logging.getLogger('ps3eye.driver'),
     }
     
-    # Configura i logger specifici
+    # Configure specific loggers
     for name, logger in loggers.items():
         logger.setLevel(logging.DEBUG if debug else logging.INFO)
         
-    logging.info("Sistema di logging configurato con successo")
+    logging.info("Logging system successfully configured")
     if debug:
-        logging.debug("Modalità debug attivata")
+        logging.debug("Debug mode activated")
